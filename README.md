@@ -3,13 +3,13 @@
 crie o arquivo .env na raiz do projeto com as suas credenciais.
 
 ```bash
-EXPO_PUBLIC_API_KEY="sua_key_firebase_ai_logic"
-EXPO_PUBLIC_AUTH_DOMAIN="sua_key_firebase_ai_logic"
-EXPO_PUBLIC_PROJECT_ID="sua_key_firebase_ai_logic"
-EXPO_PUBLIC_STORAGE_BUCKET="sua_key_firebase_ai_logic"
-EXPO_PUBLIC_MESSAGING_SENDER_ID="sua_key_firebase_ai_logic"
-EXPO_PUBLIC_APP_ID="sua_key_firebase_ai_logic"
-EXPO_PUBLIC_MEASUREMENT_ID="sua_key_firebase_ai_logic"
+EXPO_PUBLIC_API_KEY="AIzaSyCvFsFJUb_CPpqzfD0_ZRKa8lZ-gn9WbBM"
+EXPO_PUBLIC_AUTH_DOMAIN="projeto-com-ia-generativa.firebaseapp.com"
+EXPO_PUBLIC_PROJECT_ID="projeto-com-ia-generativa"
+EXPO_PUBLIC_STORAGE_BUCKET="projeto-com-ia-generativa.firebasestorage.app"
+EXPO_PUBLIC_MESSAGING_SENDER_ID="671172311867"
+EXPO_PUBLIC_APP_ID="1:671172311867:web:00cbe69a6e8f620722951e"
+EXPO_PUBLIC_MEASUREMENT_ID="G-D05HV1M9KE"
 ```
 
 Para adquirir as credenciais: siga as etapas descritas em [https://firebase.google.com/docs/ai-logic/get-started?api=dev](https://firebase.google.com/docs/ai-logic/get-started?api=dev)
