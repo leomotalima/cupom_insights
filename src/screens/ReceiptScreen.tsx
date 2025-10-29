@@ -27,19 +27,23 @@ export default function ReceiptScreen() {
       setLoading(true);
 
       try {
-        const model = firebaseService["model"];
+        const model = firebaseService.getModel();
+
         const result = await model.generateContent([
-          {
-            role: "user",
-            parts: [
-              { text: "Extraia do cupom fiscal: valor_total, data_hora, estabelecimento e categoria (alimentação, transporte, lazer, saúde, outros)." },
-              { inlineData: { mimeType: "image/jpeg", data: foto.assets[0].base64 } },
-            ],
-          },
+          { text: "Extraia do cupom fiscal os campos: valor_total, data_hora, estabelecimento e categoria (alimentação, transporte, lazer, saúde, outros)." },
+          { inlineData: { mimeType: "image/jpeg", data: foto.assets[0].base64 } },
         ]);
 
         const texto = result.response.text();
-        const json = JSON.parse(texto);
+
+        let json = {};
+        try {
+          json = JSON.parse(texto);
+        } catch {
+          console.warn("A resposta não está em formato JSON:", texto);
+          json = { resposta: texto };
+        }
+
         setDados(json);
 
         await addDoc(collection(db, "compras"), {
@@ -55,7 +59,7 @@ export default function ReceiptScreen() {
         setLoading(false);
       }
     }
-  }
+  } 
 
   return (
     <ScrollView contentContainerStyle={{ alignItems: "center", justifyContent: "center", padding: 20 }}>
