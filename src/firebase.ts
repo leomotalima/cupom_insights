@@ -19,7 +19,7 @@ const firebaseConfig = {
   appId: EXPO_PUBLIC_APP_ID,
 };
 
-const app = initializeApp(firebaseConfig);
+export const app = initializeApp(firebaseConfig);
 
 export const db = getFirestore(app);
 export const storage = getStorage(app);
