@@ -13,8 +13,8 @@ import {
 } from 'react-native';
 import firebaseService, { ChatHistory } from '../services/firebaseService';
 
-type Role = 'user' | 'model';
-type Message = { id: string; role: Role; parts: string; timestamp: Date };
+import { Message } from '../types/chat';
+
 
 export default function GeminiChatScreen() {
   const scheme = useColorScheme();
