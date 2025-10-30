@@ -1,3 +1,5 @@
+import { collection, getDocs } from "firebase/firestore";
+import { db } from "../services/firebaseService";
 import React, { useRef, useState } from 'react';
 import {
   ActivityIndicator,
@@ -27,52 +29,67 @@ export default function GeminiChatScreen() {
   const flatRef = useRef<FlatList<Message>>(null);
 
   const sendMessage = async () => {
-    const text = inputText.trim();
-    if (!text || loading) return;
+  const text = inputText.trim();
+  if (!text || loading) return;
 
-    const userMsg: Message = {
-      id: String(Date.now()),
-      role: 'user',
-      parts: text,
-      timestamp: new Date(),
-    };
-
-    setMessages(prev => [userMsg, ...prev]); // inverted
-    setInputText('');
-    setLoading(true);
-
-    try {
-      const replyText = await firebaseService.chatWithHistory(text, history);
-
-      setHistory(prev => [
-        ...prev,
-        { role: 'user', parts: [{ text }] },
-        { role: 'model', parts: [{ text: replyText }] },
-      ]);
-
-      const botMsg: Message = {
-        id: String(Date.now() + 1),
-        role: 'model',
-        parts: replyText,
-        timestamp: new Date(),
-      };
-      setMessages(prev => [botMsg, ...prev]);
-      requestAnimationFrame(() =>
-        flatRef.current?.scrollToOffset({ offset: 0, animated: true })
-      );
-    } catch {
-      const errMsg: Message = {
-        id: String(Date.now() + 1),
-        role: 'model',
-        parts: 'Desculpe, ocorreu um erro ao processar sua mensagem.',
-        timestamp: new Date(),
-      };
-      setMessages(prev => [errMsg, ...prev]);
-    } finally {
-      setLoading(false);
-    }
+  const userMsg: Message = {
+    id: String(Date.now()),
+    role: "user",
+    parts: text,
+    timestamp: new Date(),
   };
 
+  setMessages(prev => [userMsg, ...prev]);
+  setInputText("");
+  setLoading(true);
+
+  try {
+    const snapshot = await getDocs(collection(db, "compras"));
+    const dados = snapshot.docs.map(doc => doc.data());
+    const contexto = JSON.stringify(dados, null, 2);
+
+    const prompt = `
+Você é um consultor financeiro. 
+Analise os dados abaixo e gere uma resposta em português claro, destacando padrões de gasto e sugestões de economia.
+
+Dados (JSON):
+${contexto}
+
+Pergunta: ${text}
+`;
+
+    const replyText = await firebaseService.chatWithHistory(prompt, history);
+
+    setHistory(prev => [
+      ...prev,
+      { role: "user", parts: [{ text }] },
+      { role: "model", parts: [{ text: replyText }] },
+    ]);
+
+    const botMsg: Message = {
+      id: String(Date.now() + 1),
+      role: "model",
+      parts: replyText,
+      timestamp: new Date(),
+    };
+    setMessages(prev => [botMsg, ...prev]);
+
+    requestAnimationFrame(() =>
+      flatRef.current?.scrollToOffset({ offset: 0, animated: true })
+    );
+  } catch (error) {
+    const errMsg: Message = {
+      id: String(Date.now() + 1),
+      role: "model",
+      parts: "Não foi possível processar a análise no momento.",
+      timestamp: new Date(),
+    };
+    setMessages(prev => [errMsg, ...prev]);
+    console.error(error);
+  } finally {
+    setLoading(false);
+  }
+};
 
   const colors = isDark
     ? {
