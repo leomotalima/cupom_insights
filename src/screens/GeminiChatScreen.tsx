@@ -144,9 +144,9 @@ Pergunta: ${text}
           { borderBottomColor: colors.border, backgroundColor: colors.card },
         ]}
       >
-        <Text style={[styles.title, { color: colors.text }]}>Arnaldo AppChat</Text>
+        <Text style={[styles.title, { color: colors.text }]}>Cupom Insights</Text>
         <Text style={[styles.subtitle, { color: colors.muted }]}>
-          Exemplo de chat integrado ao Firebase AI Logic
+          Assistente de Análise Financeira com IA Generativa (Firebase AI Logic)
         </Text>
       </View>
 
