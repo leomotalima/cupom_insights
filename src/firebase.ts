@@ -1,18 +1,42 @@
 import { initializeApp } from "firebase/app";
-import { getFirestore } from "firebase/firestore";
+import { initializeFirestore, memoryLocalCache, connectFirestoreEmulator } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
+import { Platform } from "react-native";
+import {
+  EXPO_PUBLIC_API_KEY,
+  EXPO_PUBLIC_AUTH_DOMAIN,
+  EXPO_PUBLIC_PROJECT_ID,
+  EXPO_PUBLIC_STORAGE_BUCKET,
+  EXPO_PUBLIC_MESSAGING_SENDER_ID,
+  EXPO_PUBLIC_APP_ID,
+  EXPO_PUBLIC_MEASUREMENT_ID,
+} from "@env";
 
 const firebaseConfig = {
-  apiKey: 'AIzaSyCvFsFJUb_CPpqzfD0_ZRKa8lZ-gn9WbBM',
-  authDomain: 'projeto-com-ia-generativa.firebaseapp.com',
-  projectId: 'projeto-com-ia-generativa',
-  storageBucket: 'projeto-com-ia-generativa.firebasestorage.app',
-  messagingSenderId: '671172311867',
-  appId: '1:671172311867:web:00cbe69a6e8f620722951e',
-  measurementId: 'G-D05HV1M9KE',
+  apiKey: EXPO_PUBLIC_API_KEY,
+  authDomain: EXPO_PUBLIC_AUTH_DOMAIN,
+  projectId: EXPO_PUBLIC_PROJECT_ID,
+  storageBucket: EXPO_PUBLIC_STORAGE_BUCKET,
+  messagingSenderId: EXPO_PUBLIC_MESSAGING_SENDER_ID,
+  appId: EXPO_PUBLIC_APP_ID,
+  measurementId: EXPO_PUBLIC_MEASUREMENT_ID,
 };
 
 export const app = initializeApp(firebaseConfig);
 
-export const db = getFirestore(app);
+// AGGRESSIVE configuration to avoid WebChannel 400 errors on web
+// This completely disables real-time sync and uses REST API only
+export const db = Platform.OS === 'web'
+  ? initializeFirestore(app, {
+      localCache: memoryLocalCache(),
+      ignoreUndefinedProperties: true,
+      // Force long polling instead of WebChannel (more compatible)
+      experimentalForceLongPolling: true,
+      // Disable auto-detection to prevent WebChannel attempts
+      experimentalAutoDetectLongPolling: false,
+    })
+  : initializeFirestore(app, {
+      ignoreUndefinedProperties: true,
+    });
+
 export const storage = getStorage(app);

@@ -146,7 +146,7 @@ Pergunta: ${text}
       >
         <Text style={[styles.title, { color: colors.text }]}>Cupom Insights</Text>
         <Text style={[styles.subtitle, { color: colors.muted }]}>
-          Assistente de Análise Financeira com IA Generativa (Firebase AI Logic)
+          Assistente de Análise Financeira com Google AI (Gemini)
         </Text>
       </View>
 

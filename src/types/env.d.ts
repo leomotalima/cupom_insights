@@ -6,4 +6,5 @@ declare module '@env' {
   export const EXPO_PUBLIC_MESSAGING_SENDER_ID: string;
   export const EXPO_PUBLIC_APP_ID: string;
   export const EXPO_PUBLIC_MEASUREMENT_ID: string;
+  export const GEMINI_API_KEY: string;
 }
