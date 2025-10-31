@@ -1,11 +1,3 @@
-/**
- * DEPRECATED: This file is no longer used in the application.
- * Navigation has been migrated to Expo Router with file-based routing.
- * See: app/(tabs)/_layout.tsx for the current tab navigation implementation.
- *
- * This file is kept for reference only.
- */
-
 import * as React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
