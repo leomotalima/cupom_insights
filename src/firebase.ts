@@ -1,22 +1,15 @@
 import { initializeApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
-import {
-  EXPO_PUBLIC_API_KEY,
-  EXPO_PUBLIC_AUTH_DOMAIN,
-  EXPO_PUBLIC_PROJECT_ID,
-  EXPO_PUBLIC_STORAGE_BUCKET,
-  EXPO_PUBLIC_MESSAGING_SENDER_ID,
-  EXPO_PUBLIC_APP_ID,
-} from "@env";
 
 const firebaseConfig = {
-  apiKey: EXPO_PUBLIC_API_KEY,
-  authDomain: EXPO_PUBLIC_AUTH_DOMAIN,
-  projectId: EXPO_PUBLIC_PROJECT_ID,
-  storageBucket: EXPO_PUBLIC_STORAGE_BUCKET,
-  messagingSenderId: EXPO_PUBLIC_MESSAGING_SENDER_ID,
-  appId: EXPO_PUBLIC_APP_ID,
+  apiKey: 'AIzaSyCvFsFJUb_CPpqzfD0_ZRKa8lZ-gn9WbBM',
+  authDomain: 'projeto-com-ia-generativa.firebaseapp.com',
+  projectId: 'projeto-com-ia-generativa',
+  storageBucket: 'projeto-com-ia-generativa.firebasestorage.app',
+  messagingSenderId: '671172311867',
+  appId: '1:671172311867:web:00cbe69a6e8f620722951e',
+  measurementId: 'G-D05HV1M9KE',
 };
 
 export const app = initializeApp(firebaseConfig);

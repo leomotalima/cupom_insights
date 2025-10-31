@@ -1,9 +1,9 @@
-import React, { useState } from "react";
-import { View, Text, Button, Image, ScrollView, ActivityIndicator, Alert } from "react-native";
 import * as ImagePicker from "expo-image-picker";
-import { db } from "../services/firebaseService";
-import { collection, addDoc, serverTimestamp } from "firebase/firestore";
-import firebaseService from "../services/firebaseService";
+import { addDoc, collection, serverTimestamp } from "firebase/firestore";
+import React, { useState } from "react";
+import { ActivityIndicator, Alert, Button, Image, ScrollView, Text, View } from "react-native";
+import firebaseService, { db } from "../services/firebaseService";
+
 
 export default function ReceiptScreen() {
   const [image, setImage] = useState<string | null>(null);
