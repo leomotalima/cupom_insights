@@ -1,22 +1,42 @@
 import * as ImagePicker from "expo-image-picker";
 import { addDoc, collection, serverTimestamp } from "firebase/firestore";
 import React, { useState } from "react";
-import { ActivityIndicator, Alert, Button, Image, ScrollView, Text, View, StyleSheet } from "react-native";
+import {
+  ActivityIndicator,
+  Alert,
+  Button,
+  Image,
+  ScrollView,
+  Text,
+  View,
+  StyleSheet,
+} from "react-native";
+import { useRouter } from "expo-router";
 import firebaseService, { db } from "../services/firebaseService";
-import { sanitizeForFirestore, validateReceiptData } from "../utils/dataValidation";
+import {
+  sanitizeForFirestore,
+  validateReceiptData,
+} from "../utils/dataValidation";
 
 export default function ReceiptScreen() {
-  const [image, setImage] = useState<string | null>(null);
+  const [image, setImage] = useState<{ uri: string; base64: string } | null>(
+    null
+  );
   const [loading, setLoading] = useState(false);
   const [dados, setDados] = useState<any>(null);
   const [errorDetails, setErrorDetails] = useState<string | null>(null);
+  const router = useRouter();
 
   async function capturarCupom() {
     setErrorDetails(null);
+    setDados(null);
 
     const permission = await ImagePicker.requestCameraPermissionsAsync();
     if (!permission.granted) {
-      Alert.alert("Permissão necessária", "Habilite o acesso à câmera para continuar.");
+      Alert.alert(
+        "Permissão necessária",
+        "Habilite o acesso à câmera para continuar."
+      );
       return;
     }
 
@@ -26,109 +46,98 @@ export default function ReceiptScreen() {
     });
 
     if (!foto.canceled && foto.assets?.[0].base64) {
-      setImage(foto.assets[0].uri);
-      setLoading(true);
+      setImage({
+        uri: foto.assets[0].uri,
+        base64: foto.assets[0].base64,
+      });
+      Alert.alert(
+        "Imagem capturada",
+        "Agora clique em 'Analisar Cupom com IA' para processar os dados."
+      );
+    }
+  }
 
-      try {
-        console.log("🔄 Iniciando processamento do cupom com Google AI (Gemini)...");
+  async function analisarCupom() {
+    if (!image?.base64) {
+      Alert.alert("Erro", "Capture uma imagem antes de analisar.");
+      return;
+    }
 
-        const model = firebaseService.getModel();
+    setLoading(true);
+    setErrorDetails(null);
 
-        const prompt = `Extraia as seguintes informações do cupom fiscal e retorne APENAS um objeto JSON válido (sem markdown, sem explicações):
+    try {
+      const model = firebaseService.getModel();
+      const prompt = `Extraia as seguintes informações do cupom fiscal e retorne APENAS um objeto JSON válido (sem markdown, sem explicações):
 {
-  "valor_total": "valor em formato numérico ou string",
+  "valor_total": "valor numérico ou string",
   "data_hora": "data e hora da compra",
   "estabelecimento": "nome do estabelecimento",
-  "categoria": "uma das categorias: alimentação, transporte, lazer, saúde, outros"
+  "categoria": "alimentação, transporte, lazer, saúde ou outros"
 }`;
 
-        const result = await model.generateContent([
-          { text: prompt },
-          { inlineData: { mimeType: "image/jpeg", data: foto.assets[0].base64 } },
-        ]);
+      const result = await model.generateContent([
+        { text: prompt },
+        { inlineData: { mimeType: "image/jpeg", data: image.base64 } },
+      ]);
 
-        const texto = result.response.text();
-        console.log("📄 Resposta da IA:", texto);
-
-        let json = {};
-        try {
-          // Remove markdown code blocks if present
-          const cleanText = texto.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
-          json = JSON.parse(cleanText);
-          console.log("✅ JSON parseado com sucesso:", json);
-        } catch (parseError) {
-          console.warn("⚠️ A resposta não está em formato JSON válido:", texto);
-          json = { resposta: texto };
-        }
-
-        // Validate and sanitize data
-        const validatedData = validateReceiptData(json);
-        const sanitizedData = sanitizeForFirestore(validatedData);
-
-        console.log("🧹 Dados sanitizados:", sanitizedData);
-
-        setDados(sanitizedData);
-
-        // Try to save to Firestore, but don't fail if it doesn't work
-        console.log("💾 Tentando salvar no Firestore...");
-        try {
-          const docRef = await addDoc(collection(db, "compras"), {
-            ...sanitizedData,
-            criadoEm: serverTimestamp(),
-          });
-
-          console.log("✅ Documento salvo com ID:", docRef.id);
-          Alert.alert("Cupom salvo!", "As informações foram processadas e salvas com sucesso no Firestore.");
-        } catch (firestoreError: any) {
-          console.warn("⚠️ Erro ao salvar no Firestore (dados ainda foram processados):", firestoreError);
-
-          // Still show success because AI processing worked
-          Alert.alert(
-            "Cupom processado!",
-            "A IA extraiu as informações com sucesso.\n\nNota: Não foi possível salvar no Firestore (erro de conexão), mas os dados estão visíveis na tela."
-          );
-        }
-
-      } catch (erro: any) {
-        console.error("❌ Erro completo:", erro);
-
-        let errorMessage = "Não foi possível processar o cupom.";
-        let details = "";
-
-        if (erro?.message) {
-          details = erro.message;
-        }
-
-        if (erro?.code) {
-          errorMessage += `\n\nCódigo: ${erro.code}`;
-          details += `\nCode: ${erro.code}`;
-        }
-
-        if (erro?.status) {
-          errorMessage += `\nStatus: ${erro.status}`;
-          details += `\nStatus: ${erro.status}`;
-        }
-
-        // Check for specific error types
-        if (details.includes("400") || details.includes("Bad Request")) {
-          errorMessage = "Erro de requisição inválida. Verifique sua chave de API.";
-        } else if (details.includes("403") || details.includes("Forbidden")) {
-          errorMessage = "Acesso negado. Verifique as permissões da API.";
-        } else if (details.includes("PERMISSION_DENIED")) {
-          errorMessage = "Permissão negada no Firestore. Verifique as regras de segurança.";
-        }
-
-        setErrorDetails(details);
-        Alert.alert("Erro ao processar cupom", errorMessage);
-      } finally {
-        setLoading(false);
+      const texto = result.response.text();
+      let json = {};
+      try {
+        const cleanText = texto
+          .replace(/```json\n?/g, "")
+          .replace(/```\n?/g, "")
+          .trim();
+        json = JSON.parse(cleanText);
+      } catch {
+        json = { resposta: texto };
       }
+
+      const validatedData = validateReceiptData(json);
+      const sanitizedData = sanitizeForFirestore(validatedData);
+
+      setDados(sanitizedData);
+
+      try {
+        await addDoc(collection(db, "compras"), {
+          ...sanitizedData,
+          criadoEm: serverTimestamp(),
+        });
+        Alert.alert(
+          "Cupom processado",
+          "As informações foram extraídas e salvas no Firestore."
+        );
+      } catch (firestoreError: any) {
+        console.warn("Erro ao salvar no Firestore:", firestoreError);
+        Alert.alert(
+          "Cupom processado",
+          "A IA analisou o cupom, mas o Firestore não pôde ser atualizado."
+        );
+      }
+    } catch (erro: any) {
+      console.error("Erro ao processar cupom:", erro);
+      let msg = "Não foi possível processar o cupom.";
+      if (erro.message?.includes("403"))
+        msg = "Acesso negado à API. Verifique sua chave Firebase.";
+      setErrorDetails(erro.message || "Erro desconhecido");
+      Alert.alert("Erro ao processar cupom", msg);
+    } finally {
+      setLoading(false);
     }
   }
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <Button title="📸 Tirar Foto do Cupom" onPress={capturarCupom} />
+      <Text style={styles.title}>Cupom Insights</Text>
+      <Text style={styles.subtitle}>
+        Análise Inteligente de Cupons com Firebase AI Logic
+      </Text>
+
+      <Button title="Tirar Foto do Cupom" onPress={capturarCupom} />
+
+      {image && !loading && (
+        <Button title="Analisar Cupom com IA" onPress={analisarCupom} color="#007AFF" />
+      )}
 
       {loading && (
         <View style={styles.loadingContainer}>
@@ -137,32 +146,36 @@ export default function ReceiptScreen() {
         </View>
       )}
 
-      {image && <Image source={{ uri: image }} style={styles.image} />}
+      {image && <Image source={{ uri: image.uri }} style={styles.image} />}
 
       {dados && Object.keys(dados).length > 0 && (
         <View style={styles.resultContainer}>
-          <Text style={styles.resultTitle}>✅ Informações Extraídas:</Text>
+          <Text style={styles.resultTitle}>Informações Extraídas:</Text>
           {dados.estabelecimento && (
-            <Text style={styles.resultText}>🏪 Estabelecimento: {dados.estabelecimento}</Text>
+            <Text style={styles.resultText}>
+              Estabelecimento: {dados.estabelecimento}
+            </Text>
           )}
           {dados.valor_total && (
-            <Text style={styles.resultText}>💰 Valor: {dados.valor_total}</Text>
+            <Text style={styles.resultText}>Valor: {dados.valor_total}</Text>
           )}
           {dados.data_hora && (
-            <Text style={styles.resultText}>📅 Data/Hora: {dados.data_hora}</Text>
+            <Text style={styles.resultText}>Data/Hora: {dados.data_hora}</Text>
           )}
           {dados.categoria && (
-            <Text style={styles.resultText}>📂 Categoria: {dados.categoria}</Text>
+            <Text style={styles.resultText}>Categoria: {dados.categoria}</Text>
           )}
-          {dados.resposta && (
-            <Text style={styles.resultText}>📝 Resposta: {dados.resposta}</Text>
-          )}
+          <Button
+            title="Ver Insights"
+            onPress={() => router.push("/tabs/chat")}
+            color="#34A853"
+          />
         </View>
       )}
 
       {errorDetails && (
         <View style={styles.errorContainer}>
-          <Text style={styles.errorTitle}>⚠️ Detalhes do Erro:</Text>
+          <Text style={styles.errorTitle}>Detalhes do Erro:</Text>
           <Text style={styles.errorText}>{errorDetails}</Text>
         </View>
       )}
@@ -176,6 +189,19 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     padding: 20,
     minHeight: "100%",
+    backgroundColor: "#fff",
+  },
+  title: {
+    fontSize: 22,
+    fontWeight: "bold",
+    color: "#007AFF",
+    marginBottom: 5,
+  },
+  subtitle: {
+    fontSize: 14,
+    color: "#666",
+    marginBottom: 20,
+    textAlign: "center",
   },
   loadingContainer: {
     marginTop: 20,
@@ -187,15 +213,15 @@ const styles = StyleSheet.create({
     color: "#666",
   },
   image: {
-    width: 250,
-    height: 250,
+    width: 260,
+    height: 260,
     marginTop: 20,
     borderRadius: 10,
     borderWidth: 2,
     borderColor: "#ddd",
   },
   resultContainer: {
-    marginTop: 20,
+    marginTop: 25,
     padding: 15,
     backgroundColor: "#f0f9ff",
     borderRadius: 10,
