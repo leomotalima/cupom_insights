@@ -40,3 +40,4 @@ export const db = Platform.OS === 'web'
     });
 
 export const storage = getStorage(app);
+export { firebaseConfig };
