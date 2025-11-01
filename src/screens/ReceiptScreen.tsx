@@ -1,22 +1,11 @@
 import * as ImagePicker from "expo-image-picker";
 import { addDoc, collection, serverTimestamp } from "firebase/firestore";
 import React, { useState } from "react";
-import {
-  ActivityIndicator,
-  Alert,
-  Button,
-  Image,
-  ScrollView,
-  Text,
-  View,
-  StyleSheet,
-} from "react-native";
+import { ActivityIndicator, Alert, Button, Image, ScrollView, Text, View, StyleSheet,} from "react-native";
 import { useRouter } from "expo-router";
-import firebaseService, { db } from "../services/firebaseService";
-import {
-  sanitizeForFirestore,
-  validateReceiptData,
-} from "../utils/dataValidation";
+import { db, model } from "../services/firebaseService";
+
+import {sanitizeForFirestore,validateReceiptData,} from "../utils/dataValidation";
 
 export default function ReceiptScreen() {
   const [image, setImage] = useState<{ uri: string; base64: string } | null>(
@@ -67,8 +56,7 @@ export default function ReceiptScreen() {
     setErrorDetails(null);
 
     try {
-      const model = firebaseService.getModel();
-      const prompt = `Extraia as seguintes informações do cupom fiscal e retorne APENAS um objeto JSON válido (sem markdown, sem explicações):
+        const prompt = `Extraia as seguintes informações do cupom fiscal e retorne APENAS um objeto JSON válido (sem markdown, sem explicações):
 {
   "valor_total": "valor numérico ou string",
   "data_hora": "data e hora da compra",

@@ -1,44 +1,52 @@
-import { getAI, getGenerativeModel, GoogleAIBackend } from "firebase/ai";
-import { GEMINI_API_KEY } from "@env";
-import { app, db } from "../firebase";
+import { initializeApp } from "firebase/app";
+import {
+  initializeFirestore,
+  memoryLocalCache,
+  connectFirestoreEmulator,
+} from "firebase/firestore";
+import { getStorage } from "firebase/storage";
+import { Platform } from "react-native";
+import {
+  EXPO_PUBLIC_API_KEY,
+  EXPO_PUBLIC_AUTH_DOMAIN,
+  EXPO_PUBLIC_PROJECT_ID,
+  EXPO_PUBLIC_STORAGE_BUCKET,
+  EXPO_PUBLIC_MESSAGING_SENDER_ID,
+  EXPO_PUBLIC_APP_ID,
+  EXPO_PUBLIC_MEASUREMENT_ID,
+} from "@env";
+import { getVertexAI, getGenerativeModel } from "firebase/vertexai";
 
-// Initialize Firebase AI with Google AI backend (free, no billing required)
-// Uses Google AI Studio API key from .env
-const ai = getAI(app, {
-  backend: new GoogleAIBackend(GEMINI_API_KEY)
-});
-
-const generationConfig = {
-  maxOutputTokens: 512,
-  temperature: 0.5,
-  topP: 0.8,
+const firebaseConfig = {
+  apiKey: EXPO_PUBLIC_API_KEY,
+  authDomain: EXPO_PUBLIC_AUTH_DOMAIN,
+  projectId: EXPO_PUBLIC_PROJECT_ID,
+  storageBucket: EXPO_PUBLIC_STORAGE_BUCKET,
+  messagingSenderId: EXPO_PUBLIC_MESSAGING_SENDER_ID,
+  appId: EXPO_PUBLIC_APP_ID,
+  measurementId: EXPO_PUBLIC_MEASUREMENT_ID,
 };
 
-// Get the generative model (Gemini 2.0 Flash - latest version)
-// Note: Gemini 1.5 models were retired on September 24, 2025
-const model = getGenerativeModel(ai, {
-  model: "gemini-2.0-flash-exp"
-}, {
-  generationConfig
+export const app = initializeApp(firebaseConfig);
+
+export const db =
+  Platform.OS === "web"
+    ? initializeFirestore(app, {
+        localCache: memoryLocalCache(),
+        ignoreUndefinedProperties: true,
+        experimentalForceLongPolling: true,
+        experimentalAutoDetectLongPolling: false,
+      })
+    : initializeFirestore(app, {
+        ignoreUndefinedProperties: true,
+      });
+
+export const storage = getStorage(app);
+
+export const vertexAI = getVertexAI(app);
+
+export const model = getGenerativeModel(vertexAI, {
+  model: "gemini-2.5-flash",
 });
 
-export interface ChatHistory {
-  role: "user" | "model";
-  parts: Array<{ text: string }>;
-}
-
-class FirebaseService {
-  async chatWithHistory(message: string, history: ChatHistory[]): Promise<string> {
-    const chat = model.startChat({ history });
-    const result = await chat.sendMessage(message);
-    return result.response.text();
-  }
-
-  getModel() {
-    return model;
-  }
-}
-
-export default new FirebaseService();
-export { db };
-  
+export { firebaseConfig };

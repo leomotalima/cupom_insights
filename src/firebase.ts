@@ -1,5 +1,5 @@
 import { initializeApp } from "firebase/app";
-import { initializeFirestore, memoryLocalCache, connectFirestoreEmulator } from "firebase/firestore";
+import { initializeFirestore,  memoryLocalCache,  connectFirestoreEmulator,} from "firebase/firestore";
 import { getStorage } from "firebase/storage";
 import { Platform } from "react-native";
 import {
@@ -11,6 +11,7 @@ import {
   EXPO_PUBLIC_APP_ID,
   EXPO_PUBLIC_MEASUREMENT_ID,
 } from "@env";
+import { getVertexAI, getGenerativeModel } from "firebase/vertexai";
 
 const firebaseConfig = {
   apiKey: EXPO_PUBLIC_API_KEY,
@@ -24,20 +25,24 @@ const firebaseConfig = {
 
 export const app = initializeApp(firebaseConfig);
 
-// AGGRESSIVE configuration to avoid WebChannel 400 errors on web
-// This completely disables real-time sync and uses REST API only
-export const db = Platform.OS === 'web'
-  ? initializeFirestore(app, {
-      localCache: memoryLocalCache(),
-      ignoreUndefinedProperties: true,
-      // Force long polling instead of WebChannel (more compatible)
-      experimentalForceLongPolling: true,
-      // Disable auto-detection to prevent WebChannel attempts
-      experimentalAutoDetectLongPolling: false,
-    })
-  : initializeFirestore(app, {
-      ignoreUndefinedProperties: true,
-    });
+export const db =
+  Platform.OS === "web"
+    ? initializeFirestore(app, {
+        localCache: memoryLocalCache(),
+        ignoreUndefinedProperties: true,
+        experimentalForceLongPolling: true,
+        experimentalAutoDetectLongPolling: false,
+      })
+    : initializeFirestore(app, {
+        ignoreUndefinedProperties: true,
+      });
 
 export const storage = getStorage(app);
+
+export const vertexAI = getVertexAI(app);
+
+export const model = getGenerativeModel(vertexAI, {
+  model: "gemini-1.5-flash",
+});
+
 export { firebaseConfig };

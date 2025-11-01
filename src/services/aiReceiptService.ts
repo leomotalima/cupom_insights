@@ -12,7 +12,7 @@ export async function analyzeReceipt(base64Image: string) {
       - Data e hora da transação
       - Nome do estabelecimento
       - Categoria da despesa (alimentação, transporte, lazer, etc.)
-      Retorne no formato JSON:
+      Retorne APENAS um JSON válido:
       {
         "valor_total": number,
         "data_hora": string,
@@ -21,17 +21,10 @@ export async function analyzeReceipt(base64Image: string) {
       }
     `;
 
-    const result = await model.generateContent({
-      contents: [
-        {
-          role: "user",
-          parts: [
-            { text: prompt },
-            { inlineData: { mimeType: "image/jpeg", data: base64Image } },
-          ],
-        },
-      ],
-    });
+    const result = await model.generateContent([
+      { text: prompt },
+      { inlineData: { mimeType: "image/jpeg", data: base64Image } },
+    ]);
 
     const text = result.response.text();
     const data = JSON.parse(text);
